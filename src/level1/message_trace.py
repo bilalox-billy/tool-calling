@@ -16,24 +16,38 @@ def trace_full_tool_call(user_question: str) -> None:
     """
     # ── Step 1: Initial messages ───────────────────────────────────────────────
     messages = [
-        {"role": "system", "content": "You are a helpful assistant with access to a calculator."},
+        {"role": "system", "content": "You are a helpful assistant with access to a calculator and a clock."},
         {"role": "user", "content": user_question},
     ]
 
-    tools = [{
-        "type": "function",
-        "function": {
-            "name": "calculate",
-            "description": "Evaluate a safe math expression. Returns a float.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "expression": {"type": "string", "description": "Math expression like '12 * 8'"}
-                },
-                "required": ["expression"]
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "calculate",
+                "description": "Evaluate a safe math expression. Returns a float.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "expression": {"type": "string", "description": "Math expression like '12 * 8'"}
+                    },
+                    "required": ["expression"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_time",
+                "description": "Return the current local date and time as a formatted string.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
             }
         }
-    }]
+    ]
 
     print("═" * 70)
     print("STEP 1: Sending messages to Ollama")
@@ -73,11 +87,18 @@ def trace_full_tool_call(user_question: str) -> None:
 
     # Execute the tool
     import re
-    expression = args.get("expression", "")
-    if re.match(r'^[\d\s\+\-\*\/\.\(\)]+$', expression):
-        result = str(eval(expression))
+    from datetime import datetime
+
+    if tool_name == "calculate":
+        expression = args.get("expression", "")
+        if re.match(r'^[\d\s\+\-\*\/\.\(\)]+$', expression):
+            result = str(eval(expression))
+        else:
+            result = "Error: Unsafe expression"
+    elif tool_name == "get_current_time":
+        result = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     else:
-        result = "Error: Unsafe expression"
+        result = f"Error: Unknown tool '{tool_name}'"
 
     print(f"Tool result: {result!r}")
 
@@ -106,4 +127,4 @@ def trace_full_tool_call(user_question: str) -> None:
 
 
 if __name__ == "__main__":
-    trace_full_tool_call("What is 12 times 8?")
+    trace_full_tool_call("What is 2+2 and what time is it?")
