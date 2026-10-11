@@ -50,7 +50,7 @@ class AgentLoop:
     def __init__(
         self,
         registry,
-        model: str = "llama3.2:3b",
+        model: str = "qwen2.5:7b",
         max_iterations: int = 10,
         system_prompt: str | None = None,
     ):
