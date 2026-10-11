@@ -10,6 +10,10 @@ OLLAMA_URL = "http://localhost:11434/api/chat"
 MODEL = "qwen2.5:7b"
 
 
+
+
+
+
 def trace_full_tool_call(user_question: str) -> None:
     """
     Perform a complete single-tool-call cycle and print the exact messages.
