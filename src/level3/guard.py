@@ -45,7 +45,7 @@ class ToolGuard:
         self,
         allowed_tools: set[str] | None = None,
         max_calls_per_tool: int = 5,
-        max_total_calls: int = 20,
+        max_total_calls: int = 3,
     ):
         self.allowed_tools = allowed_tools  # None = allow all registered
         self.max_calls_per_tool = max_calls_per_tool
@@ -57,17 +57,12 @@ class ToolGuard:
 
     def check(self, tool_name: str, arguments: dict) -> None:
         """
-        Check all guards, Returns error string if blocked, None if ok.
+        Check all guards. Returns error string if blocked, None if ok.
         """
-
         # Allowlist check
         if self.allowed_tools is not None and tool_name not in self.allowed_tools:
-           logger.warning(f"Blocked non-allowlisted tool: {tool_name!r}")
-           return f"Error: Tool '{tool_name}' is not permitted"
-        
-         # Total call limit
-        if self._total_calls >= self.max_total_calls:
-            return f"Error: Maximum total tool calls ({self.max_total_calls}) reached"
+            logger.warning(f"Blocked non-allowlisted tool: {tool_name!r}")
+            return f"Error: Tool '{tool_name}' is not permitted"
 
         # Per-tool limit
         count = self._call_counts.get(tool_name, 0)
@@ -79,9 +74,12 @@ class ToolGuard:
             logger.warning(f"Loop detected: {tool_name}({arguments})")
             return f"Error: Loop detected — tool '{tool_name}' called repeatedly with identical arguments"
 
+        # Total call limit (last, as a global safety cap)
+        if self._total_calls >= self.max_total_calls:
+            return f"Error: Maximum total tool calls ({self.max_total_calls}) reached"
+
         return None  # All checks passed
 
-    
     def record(self, tool_name: str) -> None:
         """Record a successful guard check (call it after check() returns None)"""
         self._call_counts[tool_name] = self._call_counts.get(tool_name, 0) + 1
